@@ -28,7 +28,7 @@ const SongList = () => {
   return (
     <div>
       {data.songs.map(song => (
-        <Song key={song.id} {...song} />
+        <Song key={song.id} song={song} />
       ))}
     </div>
   );

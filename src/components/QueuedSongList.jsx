@@ -1,12 +1,14 @@
-import React from 'react';
+import React from "react";
 import {
   Avatar,
   IconButton,
   Typography,
   makeStyles,
   useMediaQuery,
-} from '@material-ui/core';
-import { Delete } from '@material-ui/icons';
+} from "@material-ui/core";
+import { Delete } from "@material-ui/icons";
+import { useMutation } from "@apollo/react-hooks";
+import { ADD_OR_REMOVE_FROM_QUEUE } from "../graphql/mutations";
 
 const useStyles = makeStyles({
   avatar: {
@@ -14,47 +16,60 @@ const useStyles = makeStyles({
     height: 44,
   },
   text: {
-    textOverflow: 'ellipsis',
-    overflow: 'hidden',
+    textOverflow: "ellipsis",
+    overflow: "hidden",
   },
   container: {
-    display: 'grid',
-    gridAutoFlow: 'column',
-    gridTemplateColumns: '50px auto 50px',
+    display: "grid",
+    gridAutoFlow: "column",
+    gridTemplateColumns: "50px auto 50px",
     gridGap: 12,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 10,
   },
   songInfoContainer: {
-    overflow: 'hidden',
-    whitespace: 'nowrap',
+    overflow: "hidden",
+    whitespace: "nowrap",
   },
 });
 
-const QueuedSongList = () => {
-  const greaterThanMd = useMediaQuery(theme => theme.breakpoints.up('md'));
+const QueuedSongList = ({ queue }) => {
+  const greaterThanMd = useMediaQuery(theme => theme.breakpoints.up("md"));
   const song = {
-    title: 'Burn the witch',
-    artist: 'Queens of the Stone Age',
+    title: "Burn the witch",
+    artist: "Queens of the Stone Age",
     thumbnail:
-      'https://i.ytimg.com/vi/fA92WepJdPQ/hqdefault.jpg?sqp=-oaymwEZCOADEI4CSFXyq4qpAwsIARUAAIhCGAFwAQ==&rs=AOn4CLDxAe1vc9YqwsuS9ObTAc2RFhCOvA',
+      "https://i.ytimg.com/vi/fA92WepJdPQ/hqdefault.jpg?sqp=-oaymwEZCOADEI4CSFXyq4qpAwsIARUAAIhCGAFwAQ==&rs=AOn4CLDxAe1vc9YqwsuS9ObTAc2RFhCOvA",
   };
 
   return (
     greaterThanMd && (
-      <div style={{ margin: '10px 0' }}>
+      <div style={{ margin: "10px 0" }}>
         <Typography color="textSecondary" variant="button">
-          QUEUE (5)
+          QUEUE ({queue.length})
         </Typography>
-        {Array.from({ length: 5 }, () => song).map((song, idx) => (
-          <QueuedSong key={idx} {...song} />
+        {queue.map((song, idx) => (
+          <QueuedSong key={idx} song={song} />
         ))}
       </div>
     )
   );
 };
 
-const QueuedSong = ({ title, artist, thumbnail }) => {
+const QueuedSong = ({ song }) => {
+  const { thumbnail, title, artist } = song;
+  const [addOrRemoveFromQueue] = useMutation(ADD_OR_REMOVE_FROM_QUEUE, {
+    onCompleted: data => {
+      localStorage.setItem("queue", JSON.stringify(data.addOrRemoveFromQueue));
+    },
+  });
+
+  const handleAddOrRemoveFromQueue = () => {
+    addOrRemoveFromQueue({
+      variables: { input: { ...song, __typename: "Song" } },
+    });
+  };
+
   const css = useStyles();
 
   return (
@@ -68,7 +83,7 @@ const QueuedSong = ({ title, artist, thumbnail }) => {
           {artist}
         </Typography>
       </div>
-      <IconButton>
+      <IconButton onClick={handleAddOrRemoveFromQueue}>
         <Delete color="error" />
       </IconButton>
     </div>

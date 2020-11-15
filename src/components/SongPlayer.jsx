@@ -1,5 +1,5 @@
-import React from 'react';
-import QueuedSongList from './QueuedSongList';
+import React from "react";
+import QueuedSongList from "./QueuedSongList";
 import {
   Card,
   CardContent,
@@ -8,28 +8,31 @@ import {
   Slider,
   CardMedia,
   makeStyles,
-} from '@material-ui/core';
-import { PlayArrow, SkipNext, SkipPrevious } from '@material-ui/icons';
+} from "@material-ui/core";
+import { Pause, PlayArrow, SkipNext, SkipPrevious } from "@material-ui/icons";
+import { SongContext } from "../App";
+import { useQuery } from "@apollo/react-hooks";
+import { GET_QUEUED_SONGS } from "../graphql/queries";
 
 const useStyles = makeStyles(theme => ({
   container: {
-    display: 'flex',
-    justifyContent: 'space-between',
+    display: "flex",
+    justifyContent: "space-between",
   },
   details: {
-    display: 'flex',
-    flexDirection: 'column',
-    padding: '0px 15px',
+    display: "flex",
+    flexDirection: "column",
+    padding: "0px 15px",
   },
   content: {
-    flex: '1 0 auto',
+    flex: "1 0 auto",
   },
-  thubmnail: {
+  thumbnail: {
     width: 150,
   },
   controls: {
-    display: 'flex',
-    alignItems: 'center',
+    display: "flex",
+    alignItems: "center",
     paddingLeft: theme.spacing(1),
     paddingRight: theme.spacing(1),
   },
@@ -40,25 +43,36 @@ const useStyles = makeStyles(theme => ({
 }));
 
 const SongPlayer = () => {
+  const { data } = useQuery(GET_QUEUED_SONGS);
+  const { state, dispatch } = React.useContext(SongContext);
   const css = useStyles();
+
+  const handleTogglePlay = () => {
+    dispatch(state.isPlaying ? { type: "PAUSE_SONG" } : { type: "PLAY_SONG" });
+  };
+
   return (
     <>
       <Card variant="outlined" className={css.container}>
         <div className={css.details}>
           <CardContent className={css.content}>
             <Typography variant="h5" component="h3">
-              Song
+              {state.song.title}
             </Typography>
             <Typography variant="subtitle1" component="p" color="textSecondary">
-              Artist
+              {state.song.artist}
             </Typography>
           </CardContent>
           <div className={css.controls}>
             <IconButton>
               <SkipPrevious />
             </IconButton>
-            <IconButton>
-              <PlayArrow className={css.playIcon} />
+            <IconButton onClick={handleTogglePlay}>
+              {state.isPlaying ? (
+                <Pause className={css.playIcon} />
+              ) : (
+                <PlayArrow className={css.playIcon} />
+              )}
             </IconButton>
             <IconButton>
               <SkipNext />
@@ -69,12 +83,9 @@ const SongPlayer = () => {
           </div>
           <Slider type="range" min={0} max={1} step={0.01} />
         </div>
-        <CardMedia
-          className={css.thubmnail}
-          image="https://i.ytimg.com/vi/fA92WepJdPQ/hqdefault.jpg?sqp=-oaymwEZCOADEI4CSFXyq4qpAwsIARUAAIhCGAFwAQ==&rs=AOn4CLDxAe1vc9YqwsuS9ObTAc2RFhCOvA"
-        />
+        <CardMedia className={css.thumbnail} image={state.song.thumbnail} />
       </Card>
-      <QueuedSongList />
+      <QueuedSongList queue={data.queue} />
     </>
   );
 };
